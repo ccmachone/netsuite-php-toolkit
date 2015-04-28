@@ -181,6 +181,7 @@ class NSPHPClient {
     public $generated_from_endpoint = "";
     protected $config = null;
     public $logging = false;
+    public $default_socket_timeout = null;
 
 
     protected function __construct(NSconfig $nsconfig, $wsdl=null, $options=array()) {
@@ -318,8 +319,17 @@ class NSPHPClient {
             $this->clearHeader("passport");
         }
 
+        $old_default_socket_timeout = ini_get("default_socket_timeout");
+        $reset_default_socket_timeout = false;
+        if (is_numeric($this->default_socket_timeout) && $this->default_socket_timeout > 0 ) {
+            ini_set("default_socket_timeout", $this->default_socket_timeout);
+            $reset_default_socket_timeout = true;
+        }
         $response = $this->client->__soapCall($operation, array($parameter), NULL, $this->soapHeaders);
-
+        if ($reset_default_socket_timeout) {
+            ini_set("default_socket_timeout", $old_default_socket_timeout);
+        }
+        
         if ( $this->logging && file_exists(dirname(__FILE__) . '/nslog') && is_writable(dirname(__FILE__) . '/nslog') ) {
             // log the request and response into the nslog directory. Code taken from PHP toolkit
             // REQUEST
